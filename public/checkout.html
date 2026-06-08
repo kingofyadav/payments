@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pay Securely</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/checkout.css" />
+</head>
+<body class="checkout-body">
+  <div class="checkout-wrap" id="checkoutWrap">
+    <!-- Loading state -->
+    <div id="stateLoading" class="checkout-card center-text">
+      <div class="spinner"></div>
+      <p style="color:#6b7280;margin-top:12px">Loading…</p>
+    </div>
+
+    <!-- Error states (expired, paid, deactivated) -->
+    <div id="stateInactive" class="checkout-card center-text hidden">
+      <div class="state-icon state-icon-warn">!</div>
+      <h2 id="inactiveTitle">Link unavailable</h2>
+      <p id="inactiveMsg" style="color:#6b7280;margin-top:8px"></p>
+    </div>
+
+    <!-- Payment form -->
+    <div id="stateForm" class="checkout-card hidden">
+      <div class="checkout-header">
+        <div class="checkout-avatar" id="checkoutAvatar">P</div>
+        <div>
+          <div class="checkout-merchant">PayEngine Merchant</div>
+          <div class="checkout-title" id="checkoutTitle">—</div>
+        </div>
+      </div>
+
+      <p class="checkout-desc" id="checkoutDesc"></p>
+
+      <!-- Amount display / input -->
+      <div id="amountFixed" class="amount-display hidden">
+        <span class="amount-label">Amount</span>
+        <span class="amount-value" id="amountValue">—</span>
+      </div>
+
+      <div id="amountOpen" class="field hidden">
+        <label for="inputAmount">Enter Amount (₹)</label>
+        <input type="number" id="inputAmount" placeholder="0" min="1" />
+      </div>
+
+      <div id="amountRange" class="field hidden">
+        <label for="inputAmountRange" id="amountRangeLabel">Enter Amount (₹)</label>
+        <input type="number" id="inputAmountRange" placeholder="0" />
+      </div>
+
+      <!-- Partial payment progress -->
+      <div id="partialProgress" class="partial-bar hidden">
+        <div class="partial-labels">
+          <span>Paid so far</span>
+          <span id="partialRemaining">Remaining</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="partial-labels" style="margin-top:4px">
+          <span id="partialPaid" style="color:#059669;font-weight:600"></span>
+          <span id="partialDue" style="color:#374151;font-weight:600"></span>
+        </div>
+      </div>
+
+      <!-- Payer details -->
+      <div class="fields-section">
+        <div class="field">
+          <label for="payerName">Your Name</label>
+          <input type="text" id="payerName" placeholder="Full name" />
+        </div>
+        <div class="field">
+          <label for="payerEmail">Email</label>
+          <input type="email" id="payerEmail" placeholder="you@example.com" />
+        </div>
+        <div class="field">
+          <label for="payerPhone">Phone</label>
+          <input type="tel" id="payerPhone" placeholder="10-digit mobile number" maxlength="10" />
+        </div>
+      </div>
+
+      <!-- Custom fields (pages only) -->
+      <div id="customFields" class="fields-section"></div>
+
+      <!-- Payment method -->
+      <div class="method-section">
+        <div class="method-label">Pay via</div>
+        <div class="method-grid">
+          <label class="method-opt">
+            <input type="radio" name="method" value="upi" checked />
+            <span class="method-card">
+              <span class="method-icon">⚡</span>
+              <span>UPI</span>
+            </span>
+          </label>
+          <label class="method-opt">
+            <input type="radio" name="method" value="card" />
+            <span class="method-card">
+              <span class="method-icon">💳</span>
+              <span>Card</span>
+            </span>
+          </label>
+          <label class="method-opt">
+            <input type="radio" name="method" value="netbanking" />
+            <span class="method-card">
+              <span class="method-icon">🏦</span>
+              <span>Net Banking</span>
+            </span>
+          </label>
+          <label class="method-opt">
+            <input type="radio" name="method" value="wallet" />
+            <span class="method-card">
+              <span class="method-icon">👛</span>
+              <span>Wallet</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div id="formError" class="error-msg hidden"></div>
+
+      <button class="btn btn-primary btn-full pay-btn" id="payBtn">
+        Pay <span id="payBtnAmount"></span>
+      </button>
+
+      <div class="secure-tag">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Secured by PayEngine
+      </div>
+    </div>
+
+    <!-- Success state -->
+    <div id="stateSuccess" class="checkout-card center-text hidden">
+      <div class="state-icon state-icon-success">✓</div>
+      <h2>Payment Successful!</h2>
+      <p id="successMsg" style="color:#6b7280;margin-top:8px"></p>
+      <p id="successAmount" style="font-size:28px;font-weight:700;color:#111827;margin-top:16px"></p>
+      <div id="redirectNote" style="margin-top:12px;font-size:12px;color:#9ca3af;display:none">Redirecting in <span id="countdown">3</span>s…</div>
+    </div>
+
+    <!-- Failed state -->
+    <div id="stateFailed" class="checkout-card center-text hidden">
+      <div class="state-icon state-icon-fail">✕</div>
+      <h2>Payment Failed</h2>
+      <p style="color:#6b7280;margin-top:8px">Something went wrong. Please try again.</p>
+      <button class="btn btn-secondary" id="retryBtn" style="margin-top:20px">Try Again</button>
+    </div>
+  </div>
+
+  <script src="/js/exit-popup.js"></script>
+  <script>
+    const code   = location.pathname.split('/l/')[1];
+    let   link   = null;
+
+    function fmt(paise) {
+      return '₹' + (paise / 100).toLocaleString('en-IN');
+    }
+
+    function show(id) {
+      ['stateLoading','stateInactive','stateForm','stateSuccess','stateFailed']
+        .forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('formError');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    async function loadLink() {
+      try {
+        const res  = await fetch(`/api/pub/links/${code}`);
+        const data = await res.json();
+        link       = data;
+
+        if (['paid','expired','deactivated'].includes(data.status)) {
+          document.getElementById('inactiveTitle').textContent =
+            data.status === 'paid'        ? 'Already Paid'  :
+            data.status === 'expired'     ? 'Link Expired'  : 'Link Inactive';
+          document.getElementById('inactiveMsg').textContent = data.message;
+          show('stateInactive');
+          return;
+        }
+
+        renderForm(data);
+        show('stateForm');
+      } catch (e) {
+        document.getElementById('inactiveTitle').textContent = 'Something went wrong';
+        document.getElementById('inactiveMsg').textContent   = 'Could not load payment link.';
+        show('stateInactive');
+      }
+    }
+
+    function renderForm(data) {
+      document.title = data.title + ' — Pay Securely';
+      document.getElementById('checkoutTitle').textContent  = data.title;
+      document.getElementById('checkoutDesc').textContent   = data.description || '';
+      document.getElementById('checkoutAvatar').textContent = data.title[0].toUpperCase();
+
+      if (data.amount_type === 'fixed') {
+        document.getElementById('amountFixed').classList.remove('hidden');
+        document.getElementById('amountValue').textContent = fmt(data.amount);
+        document.getElementById('payBtnAmount').textContent = fmt(data.amount);
+      } else if (data.amount_type === 'open') {
+        document.getElementById('amountOpen').classList.remove('hidden');
+      } else {
+        document.getElementById('amountRange').classList.remove('hidden');
+        document.getElementById('amountRangeLabel').textContent =
+          `Amount (₹${data.min_amount/100} – ₹${data.max_amount/100})`;
+      }
+
+      // Pre-fill if link has customer info
+      if (data.customer_name)  document.getElementById('payerName').value  = data.customer_name;
+      if (data.customer_email) document.getElementById('payerEmail').value = data.customer_email;
+      if (data.customer_phone) document.getElementById('payerPhone').value = data.customer_phone;
+
+      // Partial payment bar — amount_paid only present when allow_partial=true (security fix)
+      if (data.allow_partial && data.amount && data.amount_paid > 0) {
+        const bar = document.getElementById('partialProgress');
+        bar.classList.remove('hidden');
+        const pct = Math.min((data.amount_paid / data.amount) * 100, 100);
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('partialPaid').textContent  = fmt(data.amount_paid) + ' paid';
+        document.getElementById('partialDue').textContent   = fmt(data.amount_remaining) + ' remaining';
+      }
+
+      // Custom fields
+      if (data.custom_fields?.length) {
+        const container = document.getElementById('customFields');
+        data.custom_fields.forEach(f => {
+          const div = document.createElement('div');
+          div.className = 'field';
+          const lbl = document.createElement('label');
+          lbl.textContent = f.label + (f.required ? ' *' : '');
+
+          let input;
+          if (f.type === 'select') {
+            input = document.createElement('select');
+            input.className = 'filter-select';
+            input.style.width = '100%';
+            f.options.forEach(o => {
+              const opt = document.createElement('option');
+              opt.value = opt.textContent = o;
+              input.append(opt);
+            });
+          } else {
+            input = document.createElement('input');
+            input.type = f.type || 'text';
+            input.placeholder = f.placeholder || '';
+          }
+          input.dataset.fieldId = f.id;
+          input.required = !!f.required;
+          div.append(lbl, input);
+          container.append(div);
+        });
+      }
+    }
+
+    // Fix #3 — parseInt returns NaN on empty input; guard before multiplying
+    function getFormAmount() {
+      if (!link) return 0;
+      if (link.amount_type === 'fixed') return link.amount;
+      if (link.amount_type === 'open') {
+        const v = parseInt(document.getElementById('inputAmount').value, 10);
+        return isNaN(v) ? 0 : v * 100;
+      }
+      const v = parseInt(document.getElementById('inputAmountRange').value, 10);
+      return isNaN(v) ? 0 : v * 100;
+    }
+
+    // Update pay button amount live
+    ['inputAmount','inputAmountRange'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => {
+        const v = parseInt(document.getElementById(id).value);
+        document.getElementById('payBtnAmount').textContent = v > 0 ? fmt(v * 100) : '';
+      });
+    });
+
+    document.getElementById('payBtn').addEventListener('click', async () => {
+      document.getElementById('formError').classList.add('hidden');
+
+      const amount = getFormAmount();
+      if (!amount || amount <= 0) {
+        return showError(
+          link.amount_type === 'range'
+            ? `Enter an amount between ₹${link.min_amount/100} and ₹${link.max_amount/100}`
+            : 'Please enter a valid amount'
+        );
+      }
+      if (link.amount_type === 'range' && (amount < link.min_amount || amount > link.max_amount)) {
+        return showError(`Amount must be between ₹${link.min_amount/100} and ₹${link.max_amount/100}`);
+      }
+
+      const method = document.querySelector('input[name="method"]:checked')?.value;
+
+      // Collect custom fields
+      const formData = {};
+      document.querySelectorAll('[data-field-id]').forEach(input => {
+        formData[input.dataset.fieldId] = input.value;
+      });
+
+      const btn = document.getElementById('payBtn');
+      btn.disabled = true;
+      btn.textContent = 'Processing…';
+
+      try {
+        const res = await fetch(`/api/pub/links/${code}/pay`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount,
+            method,
+            payer_name:  document.getElementById('payerName').value  || undefined,
+            payer_email: document.getElementById('payerEmail').value || undefined,
+            payer_phone: document.getElementById('payerPhone').value || undefined,
+            form_data:   Object.keys(formData).length ? formData : undefined,
+          }),
+        });
+        const data = await res.json();
+
+        if (data.status === 'captured') {
+          document.getElementById('successMsg').textContent    = data.success_message;
+          document.getElementById('successAmount').textContent = fmt(amount);
+          show('stateSuccess');
+
+          if (data.redirect_url) {
+            const note = document.getElementById('redirectNote');
+            note.style.display = 'block';
+            let n = 3;
+            const iv = setInterval(() => {
+              document.getElementById('countdown').textContent = --n;
+              if (n <= 0) { clearInterval(iv); window.location.href = data.redirect_url; }
+            }, 1000);
+          }
+        } else {
+          show('stateFailed');
+        }
+      } catch {
+        showError('Network error. Please try again.');
+        btn.disabled   = false;
+        btn.textContent = `Pay ${fmt(amount)}`;
+      }
+    });
+
+    document.getElementById('retryBtn').addEventListener('click', () => {
+      show('stateForm');
+      const btn = document.getElementById('payBtn');
+      btn.disabled   = false;
+      btn.textContent = `Pay ${document.getElementById('payBtnAmount').textContent || ''}`;
+    });
+
+    // ── Exit popup (via shared exit-popup.js) ────────────────────────────────
+    ExitPopup.setMessage('Your payment is not complete yet.\nAll entered details will be lost.');
+
+    // Mark dirty as soon as the user touches any field
+    ['payerName','payerEmail','payerPhone','inputAmount','inputAmountRange'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => ExitPopup.markDirty());
+    });
+
+    // Patch show() so we mark done when payment succeeds
+    const _origShow = show;
+    show = function(id) {
+      _origShow(id);
+      if (id === 'stateSuccess') ExitPopup.markDone();
+    };
+
+    loadLink();
+  </script>
+</body>
+</html>

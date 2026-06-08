@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PayEngine Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="dashboard-body">
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="#4f46e5"/>
+        <path d="M8 16h16M16 8v16" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <span>PayEngine</span>
+    </div>
+
+    <div class="sidebar-merchant">
+      <div class="merchant-avatar" id="merchantAvatar">R</div>
+      <div>
+        <div class="merchant-name" id="merchantName">Loading…</div>
+        <span class="mode-badge">TEST MODE</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-section="overview">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </a>
+      <a class="nav-item" data-section="transactions">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Transactions
+      </a>
+      <a class="nav-item" data-section="customers">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Customers
+      </a>
+      <a class="nav-item" data-section="subscriptions">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Subscriptions
+      </a>
+      <a class="nav-item" data-section="payouts">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Payouts
+      </a>
+      <a class="nav-item" data-section="analytics">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </a>
+      <a class="nav-item" data-section="links">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        Payment Links
+      </a>
+      <a class="nav-item" data-section="developers">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Developers
+      </a>
+    </nav>
+
+    <button class="logout-btn" id="logoutBtn">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      Sign out
+    </button>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+
+    <!-- OVERVIEW SECTION -->
+    <section id="section-overview" class="section">
+      <div class="page-header">
+        <div>
+          <h2>Overview</h2>
+          <p class="page-sub">Today's performance at a glance</p>
+        </div>
+        <div class="header-actions">
+          <span class="last-updated" id="lastUpdated"></span>
+          <button class="btn btn-ghost" id="refreshBtn">Refresh</button>
+        </div>
+      </div>
+
+      <!-- Stats cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-revenue">₹</div>
+          <div class="stat-body">
+            <div class="stat-label">Today's Revenue</div>
+            <div class="stat-value" id="statRevenue">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-txns">#</div>
+          <div class="stat-body">
+            <div class="stat-label">Transactions</div>
+            <div class="stat-value" id="statTxns">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-rate">%</div>
+          <div class="stat-body">
+            <div class="stat-label">Success Rate</div>
+            <div class="stat-value" id="statRate">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-captured">✓</div>
+          <div class="stat-body">
+            <div class="stat-label">Captured</div>
+            <div class="stat-value" id="statCaptured">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-row">
+        <div class="chart-card chart-card-wide">
+          <div class="chart-title">Revenue — Last 7 Days</div>
+          <canvas id="revenueChart" height="80"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">By Payment Method</div>
+          <canvas id="methodChart" height="80"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent transactions -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recent Transactions</span>
+          <a class="card-link" data-section="transactions">View all →</a>
+        </div>
+        <div class="table-wrap">
+          <table id="recentTable">
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="recentTableBody">
+              <tr><td colspan="6" class="table-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRANSACTIONS SECTION -->
+    <section id="section-transactions" class="section hidden">
+      <div class="page-header">
+        <div>
+          <h2>Transactions</h2>
+          <p class="page-sub" id="txnSubtitle">All payments</p>
+        </div>
+      </div>
+
+      <div class="filters-bar">
+        <input type="text" id="txnSearch" class="filter-input" placeholder="Search by payment ID, email, or phone…" />
+        <select id="txnStatus" class="filter-select">
+          <option value="">All statuses</option>
+          <option value="captured">Captured</option>
+          <option value="failed">Failed</option>
+          <option value="refunded">Refunded</option>
+        </select>
+        <select id="txnMethod" class="filter-select">
+          <option value="">All methods</option>
+          <option value="upi">UPI</option>
+          <option value="card">Card</option>
+          <option value="netbanking">Net Banking</option>
+          <option value="wallet">Wallet</option>
+        </select>
+        <button class="btn btn-secondary" id="txnFilter">Apply</button>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table id="txnTable">
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Processor</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="txnTableBody">
+              <tr><td colspan="8" class="table-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="txnPagination"></div>
+      </div>
+    </section>
+
+    <!-- CUSTOMERS SECTION -->
+    <section id="section-customers" class="section hidden">
+      <div class="page-header">
+        <div>
+          <h2>Customers</h2>
+          <p class="page-sub">Top customers by revenue</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Payments</th>
+                <th>Total Paid</th>
+                <th>Last Payment</th>
+              </tr>
+            </thead>
+            <tbody id="customersBody">
+              <tr><td colspan="6" class="table-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUBSCRIPTIONS SECTION -->
+    <section id="section-subscriptions" class="section hidden">
+      <div class="page-header">
+        <div>
+          <h2>Subscriptions</h2>
+          <p class="page-sub">Recurring revenue engine</p>
+        </div>
+        <button class="btn btn-primary" id="createPlanBtn">+ New Plan</button>
+      </div>
+
+      <!-- MRR stats -->
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;font-size:11px;font-weight:800">MRR</div>
+          <div class="stat-body"><div class="stat-label">Monthly Revenue</div><div class="stat-value" id="subMRR">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#d1fae5;color:#059669;font-size:11px;font-weight:800">ARR</div>
+          <div class="stat-body"><div class="stat-label">Annual Revenue</div><div class="stat-value" id="subARR">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-txns">#</div>
+          <div class="stat-body"><div class="stat-label">Active Subscribers</div><div class="stat-value" id="subActive">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-rate">%</div>
+          <div class="stat-body"><div class="stat-label">Churn Rate (30d)</div><div class="stat-value" id="subChurn">—</div></div>
+        </div>
+      </div>
+
+      <div class="charts-row" style="margin-bottom:20px">
+        <!-- MRR chart -->
+        <div class="chart-card chart-card-wide">
+          <div class="chart-title">Subscription Revenue — Last 12 Months</div>
+          <canvas id="mrrChart" height="80"></canvas>
+        </div>
+        <!-- Status breakdown -->
+        <div class="chart-card">
+          <div class="chart-title">Subscription Status</div>
+          <canvas id="subStatusChart" height="80"></canvas>
+        </div>
+      </div>
+
+      <!-- Plans -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <span class="card-title">Plans</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Plan Name</th><th>Amount</th><th>Billing Cycle</th><th>Active Subscribers</th><th>Status</th></tr></thead>
+            <tbody id="plansTableBody"><tr><td colspan="5" class="table-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Subscriptions list -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Subscriptions</span>
+          <select id="subStatusFilter" class="filter-select" style="font-size:12px;padding:5px 8px">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="authenticated">Authenticated</option>
+            <option value="paused">Paused</option>
+            <option value="halted">Halted</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Customer</th><th>Plan</th><th>Status</th><th>Cycle</th><th>Next Charge</th><th>Start Date</th></tr></thead>
+            <tbody id="subsTableBody"><tr><td colspan="6" class="table-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="subsPagination"></div>
+      </div>
+    </section>
+
+    <!-- PAYOUTS SECTION -->
+    <section id="section-payouts" class="section hidden">
+      <div class="page-header">
+        <div>
+          <h2>Payouts</h2>
+          <p class="page-sub">Send money to vendors, employees, and customers</p>
+        </div>
+        <button class="btn btn-primary" id="createPayoutBtn">+ New Payout</button>
+      </div>
+
+      <!-- Stats cards -->
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-revenue">₹</div>
+          <div class="stat-body"><div class="stat-label">Paid Today</div><div class="stat-value" id="poutPaidToday">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-txns">#</div>
+          <div class="stat-body"><div class="stat-label">Pending</div><div class="stat-value" id="poutPending">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fef3c7;color:#d97706;font-size:12px;font-weight:800">APR</div>
+          <div class="stat-body"><div class="stat-label">Needs Approval</div><div class="stat-value" id="poutApproval">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#d1fae5;color:#059669;font-size:11px;font-weight:800">BAL</div>
+          <div class="stat-body"><div class="stat-label">Nodal Balance</div><div class="stat-value" id="poutBalance">—</div></div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-row" style="margin-bottom:20px">
+        <div class="chart-card chart-card-wide">
+          <div class="chart-title">Daily Payout Volume — Last 30 Days</div>
+          <canvas id="payoutChart" height="80"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">By Mode</div>
+          <canvas id="payoutModeChart" height="80"></canvas>
+        </div>
+      </div>
+
+      <!-- Pending approval -->
+      <div class="card" style="margin-bottom:16px" id="approvalCard">
+        <div class="card-header">
+          <span class="card-title" style="color:#d97706">⚠ Pending Approval</span>
+          <span style="font-size:12px;color:#9ca3af">Payouts above ₹10,000 require manual approval</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Payout ID</th><th>Contact</th><th>Amount</th><th>Mode</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="approvalTableBody"><tr><td colspan="6" class="table-empty">No pending approvals</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- All payouts -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Payouts</span>
+          <div style="display:flex;gap:8px">
+            <select id="poutStatusFilter" class="filter-select" style="font-size:12px;padding:5px 8px">
+              <option value="">All statuses</option>
+              <option value="queued">Queued</option>
+              <option value="processing">Processing</option>
+              <option value="processed">Processed</option>
+              <option value="failed">Failed</option>
+              <option value="pending_approval">Pending Approval</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Payout ID</th><th>Contact</th><th>Amount</th><th>Mode</th><th>Purpose</th><th>Status</th><th>UTR</th><th>Date</th></tr>
+            </thead>
+            <tbody id="payoutsTableBody"><tr><td colspan="8" class="table-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="poutPagination"></div>
+      </div>
+
+      <!-- Top contacts -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><span class="card-title">Contacts — By Total Paid</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Total Paid</th><th>Payouts</th><th>Last Payout</th></tr></thead>
+            <tbody id="contactsTableBody"><tr><td colspan="5" class="table-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Create payout modal -->
+      <div id="createPayoutModal" class="modal-overlay hidden">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>New Payout</h3>
+            <button class="modal-close" id="closePayoutModal">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="field">
+              <label>Fund Account ID *</label>
+              <input type="text" id="poutFaId" placeholder="fa_xxxxxxxxxx" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="field">
+                <label>Amount (₹) *</label>
+                <input type="number" id="poutAmount" placeholder="e.g. 5000" min="1" />
+              </div>
+              <div class="field">
+                <label>Mode</label>
+                <select id="poutMode">
+                  <option value="auto">Auto</option>
+                  <option value="IMPS">IMPS</option>
+                  <option value="NEFT">NEFT</option>
+                  <option value="RTGS">RTGS</option>
+                  <option value="UPI">UPI</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Purpose</label>
+              <select id="poutPurpose">
+                <option value="payout">Payout</option>
+                <option value="vendor_payment">Vendor Payment</option>
+                <option value="salary">Salary</option>
+                <option value="refund">Refund</option>
+                <option value="cashback">Cashback</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Narration (optional)</label>
+              <input type="text" id="poutNarration" placeholder="e.g. Invoice #1234 settlement" />
+            </div>
+            <div id="poutFormError" class="error-msg hidden"></div>
+            <button class="btn btn-primary btn-full" id="submitPayoutBtn">Create Payout</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS SECTION -->
+    <section id="section-analytics" class="section hidden">
+      <div class="page-header">
+        <div>
+          <h2>Analytics</h2>
+          <p class="page-sub">Deep insights — revenue, payments, customers, benchmarks</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <select id="analyticsDays" class="filter-select">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sub-tabs -->
+      <div class="modal-tabs" style="margin-bottom:20px;border-bottom:1px solid #e5e7eb;padding-bottom:0">
+        <button class="modal-tab active" data-atab="revenue">Revenue</button>
+        <button class="modal-tab" data-atab="payments">Payments</button>
+        <button class="modal-tab" data-atab="customers">Customers</button>
+        <button class="modal-tab" data-atab="benchmarks">Benchmarks</button>
+      </div>
+
+      <!-- ── REVENUE TAB ── -->
+      <div id="atab-revenue">
+        <!-- KPI cards -->
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+          <div class="stat-card">
+            <div class="stat-icon stat-icon-revenue">₹</div>
+            <div class="stat-body"><div class="stat-label">Last 30d TPV</div><div class="stat-value" id="aRevL30">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#d1fae5;color:#059669;font-size:11px;font-weight:800">MTD</div>
+            <div class="stat-body"><div class="stat-label">Month-to-Date</div><div class="stat-value" id="aRevMTD">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;font-size:10px;font-weight:800">YTD</div>
+            <div class="stat-body"><div class="stat-label">Year-to-Date</div><div class="stat-value" id="aRevYTD">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#fef3c7;color:#d97706;font-size:10px;font-weight:800">MoM</div>
+            <div class="stat-body"><div class="stat-label">MoM Growth</div><div class="stat-value" id="aRevGrowth">—</div></div>
+          </div>
+        </div>
+
+        <!-- Revenue trend + method breakdown -->
+        <div class="charts-row" style="margin-bottom:20px">
+          <div class="chart-card chart-card-wide">
+            <div class="chart-title" id="aRevTrendTitle">Daily Revenue — Last 30 Days</div>
+            <canvas id="aRevTrendChart" height="80"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Revenue by Method</div>
+            <canvas id="aRevMethodChart" height="80"></canvas>
+          </div>
+        </div>
+
+        <!-- Hourly heatmap + method table -->
+        <div class="charts-row" style="margin-bottom:20px">
+          <div class="chart-card chart-card-wide">
+            <div class="chart-title">Revenue by Hour of Day</div>
+            <canvas id="aRevHourChart" height="80"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Method Breakdown</div>
+            <div class="table-wrap" style="overflow-y:auto;max-height:220px">
+              <table>
+                <thead><tr><th>Method</th><th>Transactions</th><th>Revenue</th></tr></thead>
+                <tbody id="aRevMethodTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAYMENTS TAB ── -->
+      <div id="atab-payments" class="hidden">
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+          <div class="stat-card">
+            <div class="stat-icon stat-icon-rate">%</div>
+            <div class="stat-body"><div class="stat-label">Success Rate</div><div class="stat-value" id="aPayRate">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon-txns">#</div>
+            <div class="stat-body"><div class="stat-label">Total Payments</div><div class="stat-value" id="aPayTotal">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#fce7f3;color:#db2777;font-size:11px;font-weight:800">AVG</div>
+            <div class="stat-body"><div class="stat-label">Avg Ticket</div><div class="stat-value" id="aPayAvg">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#f0fdf4;color:#16a34a;font-size:11px;font-weight:800">P90</div>
+            <div class="stat-body"><div class="stat-label">P90 Ticket</div><div class="stat-value" id="aPayP90">—</div></div>
+          </div>
+        </div>
+
+        <div class="charts-row" style="margin-bottom:20px">
+          <div class="chart-card chart-card-wide">
+            <div class="chart-title">Daily Success Rate — Last 30 Days</div>
+            <canvas id="aPayRateChart" height="80"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Attempts by Method</div>
+            <canvas id="aPayMethodChart" height="80"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Method Performance</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Method</th><th>Attempts</th><th>Captured</th><th>Failed</th><th>Success Rate</th><th>Revenue</th><th>Avg Ticket</th></tr>
+              </thead>
+              <tbody id="aPayMethodTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CUSTOMERS TAB ── -->
+      <div id="atab-customers" class="hidden">
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+          <div class="stat-card">
+            <div class="stat-icon stat-icon-txns">#</div>
+            <div class="stat-body"><div class="stat-label">Unique Customers</div><div class="stat-value" id="aCustTotal">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#d1fae5;color:#059669;font-size:11px;font-weight:800">NEW</div>
+            <div class="stat-body"><div class="stat-label">New This Month</div><div class="stat-value" id="aCustNew">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;font-size:11px;font-weight:800">RET</div>
+            <div class="stat-body"><div class="stat-label">Retention Rate</div><div class="stat-value" id="aCustRetain">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#fef3c7;color:#d97706;font-size:10px;font-weight:800">LTV</div>
+            <div class="stat-body"><div class="stat-label">Avg LTV</div><div class="stat-value" id="aCustLTV">—</div></div>
+          </div>
+        </div>
+
+        <div class="charts-row" style="margin-bottom:20px">
+          <div class="chart-card chart-card-wide">
+            <div class="chart-title">New Customers — Monthly Cohorts</div>
+            <canvas id="aCustCohortChart" height="80"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Monthly Revenue by Cohort</div>
+            <canvas id="aCustRevCohortChart" height="80"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Top Customers — by Revenue</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Customer</th><th>Email</th><th>Payments</th><th>30d Payments</th><th>Total Paid</th><th>Last Payment</th></tr>
+              </thead>
+              <tbody id="aCustTopTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BENCHMARKS TAB ── -->
+      <div id="atab-benchmarks" class="hidden">
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#d1fae5;color:#059669;font-size:11px;font-weight:800">MRR</div>
+            <div class="stat-body"><div class="stat-label">Sub MRR</div><div class="stat-value" id="aBenchMRR">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;font-size:11px;font-weight:800">CHN</div>
+            <div class="stat-body"><div class="stat-label">Churn Rate</div><div class="stat-value" id="aBenchChurn">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#fce7f3;color:#db2777;font-size:11px;font-weight:800">PAY</div>
+            <div class="stat-body"><div class="stat-label">Payouts (30d)</div><div class="stat-value" id="aBenchPayouts">—</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#fef3c7;color:#d97706;font-size:10px;font-weight:800">SLA</div>
+            <div class="stat-body"><div class="stat-label">Payout SLA (avg)</div><div class="stat-value" id="aBenchSLA">—</div></div>
+          </div>
+        </div>
+
+        <!-- Benchmark gauges -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header"><span class="card-title">Performance vs Industry (India)</span></div>
+          <div style="padding:16px 20px" id="aBenchGauges">
+            <!-- filled by JS -->
+          </div>
+        </div>
+
+        <!-- Subscription breakdown -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-title">Subscription Status Breakdown</div>
+            <canvas id="aBenchSubChart" height="80"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Payout Mode Breakdown (30d)</div>
+            <canvas id="aBenchPayoutModeChart" height="80"></canvas>
+          </div>
+          <div class="chart-card chart-card-wide" style="padding:16px 20px">
+            <div class="chart-title" style="margin-bottom:12px">Subscription Metrics</div>
+            <div id="aBenchSubMetrics"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAYMENT LINKS SECTION -->
+    <section id="section-links" class="section hidden">
+      <div class="page-header">
+        <div>
+          <h2>Payment Links</h2>
+          <p class="page-sub">Share a link — anyone can pay instantly</p>
+        </div>
+        <button class="btn btn-primary" id="createLinkBtn">+ Create Link</button>
+      </div>
+
+      <!-- Create link modal -->
+      <div id="createLinkModal" class="modal-overlay hidden">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3 id="modalTitle">Create Payment Link</h3>
+            <button class="modal-close" id="closeModal">✕</button>
+          </div>
+
+          <div class="modal-body">
+            <div class="modal-tabs">
+              <button class="modal-tab active" data-tab="link">Payment Link</button>
+              <button class="modal-tab" data-tab="page">Payment Page</button>
+            </div>
+
+            <div class="field">
+              <label>Title *</label>
+              <input type="text" id="linkTitle" placeholder="e.g. Room booking deposit" />
+            </div>
+            <div class="field">
+              <label>Description</label>
+              <input type="text" id="linkDesc" placeholder="Optional details for payer" />
+            </div>
+
+            <div class="field">
+              <label>Amount Type</label>
+              <select id="linkAmountType">
+                <option value="fixed">Fixed Amount</option>
+                <option value="open">Customer Fills</option>
+                <option value="range">Range (min–max)</option>
+              </select>
+            </div>
+            <div id="fixedAmountField" class="field">
+              <label>Amount (₹)</label>
+              <input type="number" id="linkAmount" placeholder="e.g. 5000" min="1" />
+            </div>
+            <div id="rangeFields" class="hidden">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="field">
+                  <label>Min (₹)</label>
+                  <input type="number" id="linkMinAmount" placeholder="100" />
+                </div>
+                <div class="field">
+                  <label>Max (₹)</label>
+                  <input type="number" id="linkMaxAmount" placeholder="10000" />
+                </div>
+              </div>
+            </div>
+
+            <div class="field" style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="linkPartial" style="width:auto" />
+              <label for="linkPartial" style="margin:0;font-weight:400;cursor:pointer">Allow partial payments</label>
+            </div>
+
+            <div class="field">
+              <label>Expiry</label>
+              <select id="linkExpiry">
+                <option value="">Never expires</option>
+                <option value="86400">24 hours</option>
+                <option value="604800">7 days</option>
+                <option value="2592000">30 days</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Customer Email (optional — for link type)</label>
+              <input type="email" id="linkCustEmail" placeholder="customer@example.com" />
+            </div>
+            <div class="field">
+              <label>Success Message</label>
+              <input type="text" id="linkSuccessMsg" placeholder="Thank you! We'll confirm your booking." />
+            </div>
+
+            <!-- Custom fields — visible for page type only -->
+            <div id="customFieldsSection" style="display:none">
+              <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:8px">
+                Custom Fields
+                <span style="font-weight:400;color:#9ca3af"> — collect extra info from payers</span>
+              </div>
+              <div id="customFieldsList"></div>
+              <button type="button" class="btn btn-ghost" id="addFieldBtn" style="width:100%;margin-top:4px;font-size:12px">+ Add field</button>
+            </div>
+
+            <div id="formError2" class="error-msg hidden"></div>
+            <button class="btn btn-primary btn-full" id="submitLinkBtn">Create Link</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Links table -->
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Payments</th>
+                <th>Revenue</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="linksTableBody">
+              <tr><td colspan="8" class="table-empty">No links yet — create your first one</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEVELOPERS SECTION -->
+    <section id="section-developers" class="section hidden">
+      <div class="page-header">
+        <div>
+          <h2>Developers</h2>
+          <p class="page-sub">API credentials and integration details</p>
+        </div>
+      </div>
+
+      <!-- Dev sub-tabs -->
+      <div class="modal-tabs" style="margin-bottom:20px;border-bottom:1px solid #e5e7eb;padding-bottom:0">
+        <button class="modal-tab active" data-devtab="keys">API Keys</button>
+        <button class="modal-tab" data-devtab="playground">Playground</button>
+        <button class="modal-tab" data-devtab="webhooks">Webhooks</button>
+        <button class="modal-tab" data-devtab="sdk">SDK &amp; Guide</button>
+      </div>
+
+      <!-- ── API KEYS ── -->
+      <div id="devtab-keys">
+        <div class="dev-grid">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">API Keys</div>
+            <div id="apiKeysList">Loading…</div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Quick Start</div>
+            <div class="code-block"><pre id="curlExample">Loading…</pre></div>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <div style="font-size:13px;color:#6b7280;line-height:1.6;padding:4px 0">
+              <strong style="color:#374151">Rate limits:</strong> 600 requests/minute per API key.
+              Headers: <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, <code>X-RateLimit-Reset</code>.
+              &nbsp;&nbsp;<strong style="color:#374151">Idempotency:</strong> Send <code>X-Idempotency-Key: &lt;unique-string&gt;</code> on POST requests to safely retry without duplicates.
+              &nbsp;&nbsp;<strong style="color:#374151">Auth:</strong> <code>Authorization: Basic base64(key_id:key_secret)</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── API PLAYGROUND ── -->
+      <div id="devtab-playground" class="hidden">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-header" style="margin-bottom:12px"><span class="card-title">Request</span></div>
+            <div class="field">
+              <label>Endpoint</label>
+              <select id="pgEndpoint" style="font-family:monospace;font-size:13px">
+                <optgroup label="Orders">
+                  <option value="GET /v1/orders">GET /v1/orders</option>
+                  <option value="POST /v1/orders">POST /v1/orders</option>
+                  <option value="GET /v1/orders/{id}">GET /v1/orders/{id}</option>
+                </optgroup>
+                <optgroup label="Payments">
+                  <option value="GET /v1/payments">GET /v1/payments</option>
+                  <option value="POST /v1/payments">POST /v1/payments</option>
+                  <option value="GET /v1/payments/{id}">GET /v1/payments/{id}</option>
+                  <option value="POST /v1/payments/{id}/refund">POST /v1/payments/{id}/refund</option>
+                </optgroup>
+                <optgroup label="Refunds">
+                  <option value="GET /v1/refunds">GET /v1/refunds</option>
+                  <option value="POST /v1/refunds">POST /v1/refunds</option>
+                </optgroup>
+                <optgroup label="Settlements">
+                  <option value="GET /v1/settlements">GET /v1/settlements</option>
+                  <option value="GET /v1/settlements/{id}/recons">GET /v1/settlements/{id}/recons</option>
+                </optgroup>
+                <optgroup label="Plans & Subscriptions">
+                  <option value="GET /v1/plans">GET /v1/plans</option>
+                  <option value="GET /v1/subscriptions">GET /v1/subscriptions</option>
+                </optgroup>
+                <optgroup label="Payouts">
+                  <option value="GET /v1/payouts">GET /v1/payouts</option>
+                  <option value="GET /v1/contacts">GET /v1/contacts</option>
+                </optgroup>
+                <optgroup label="Webhooks">
+                  <option value="GET /v1/webhooks">GET /v1/webhooks</option>
+                  <option value="POST /v1/webhooks">POST /v1/webhooks</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="field" id="pgIdField" style="display:none">
+              <label>Resource ID</label>
+              <input type="text" id="pgId" placeholder="e.g. pay_abc123" style="font-family:monospace;font-size:13px" />
+            </div>
+            <div class="field" id="pgBodyField">
+              <label>Request Body (JSON)</label>
+              <textarea id="pgBody" rows="8" style="font-family:monospace;font-size:12px;width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;box-sizing:border-box;resize:vertical;outline:none" placeholder='{"amount": 50000}'></textarea>
+            </div>
+            <div class="field">
+              <label>Idempotency Key (optional)</label>
+              <input type="text" id="pgIdemKey" placeholder="Leave blank for auto-generate" style="font-family:monospace;font-size:12px"/>
+            </div>
+            <button class="btn btn-primary" id="pgSend" style="width:100%">Send Request</button>
+          </div>
+          <div class="card">
+            <div class="card-header" style="margin-bottom:12px">
+              <span class="card-title">Response</span>
+              <span id="pgStatus" style="font-size:12px;font-family:monospace;padding:2px 8px;background:#f3f4f6;border-radius:6px"></span>
+            </div>
+            <div style="margin-bottom:12px">
+              <div style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">cURL</div>
+              <div class="code-block" style="padding:10px 12px;max-height:100px;overflow-y:auto"><pre id="pgCurl" style="margin:0;font-size:11px;white-space:pre-wrap"></pre></div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Response Body</div>
+              <div class="code-block" style="padding:10px 12px;max-height:360px;overflow-y:auto"><pre id="pgResponse" style="margin:0;font-size:12px;white-space:pre-wrap">Run a request to see the response…</pre></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── WEBHOOKS ── -->
+      <div id="devtab-webhooks" class="hidden">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <span class="card-title">Registered Endpoints</span>
+            <button class="btn btn-primary" id="addWebhookBtn" style="font-size:12px;padding:6px 14px">+ Add Endpoint</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL</th><th>Events</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+              <tbody id="webhookEndpointsBody"><tr><td colspan="5" class="table-empty">No webhook endpoints registered</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Recent Delivery Logs</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Event</th><th>Status</th><th>Attempts</th><th>Delivered At</th><th>Created</th></tr></thead>
+              <tbody id="webhookLogsBody"><tr><td colspan="5" class="table-empty">No webhook events yet</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add webhook modal -->
+        <div id="addWebhookModal" class="modal-overlay hidden">
+          <div class="modal-card">
+            <div class="modal-header"><h3>Register Webhook Endpoint</h3><button class="modal-close" id="closeWebhookModal">✕</button></div>
+            <div class="modal-body">
+              <div class="field"><label>URL *</label><input type="url" id="whUrl" placeholder="https://yourapp.com/webhook" /></div>
+              <div class="field">
+                <label>Events</label>
+                <select id="whEvents" multiple style="height:120px">
+                  <option value="*" selected>All events (*)</option>
+                  <option value="payment.captured">payment.captured</option>
+                  <option value="payment.failed">payment.failed</option>
+                  <option value="refund.created">refund.created</option>
+                  <option value="subscription.activated">subscription.activated</option>
+                  <option value="payout.processed">payout.processed</option>
+                  <option value="settlement.processed">settlement.processed</option>
+                </select>
+                <div style="font-size:11px;color:#9ca3af;margin-top:4px">Hold Ctrl/Cmd to select multiple</div>
+              </div>
+              <div class="field"><label>Secret (optional — auto-generated if blank)</label><input type="text" id="whSecret" placeholder="Leave blank to auto-generate" /></div>
+              <div id="whErr" class="error-msg hidden"></div>
+              <button class="btn btn-primary btn-full" id="submitWebhookBtn">Register</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SDK & GUIDE ── -->
+      <div id="devtab-sdk" class="hidden">
+        <div class="dev-grid">
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-title" style="margin-bottom:16px">Node.js SDK</div>
+            <div class="code-block"><pre style="font-size:12px;white-space:pre-wrap">npm install payengine  # (use your package name)
+
+const PayEngine = require('payengine');
+const client = new PayEngine('key_id', 'key_secret');
+
+// Create an order
+const order = await client.orders.create({
+  amount: 50000,   // ₹500 in paise
+  currency: 'INR',
+  customer: { name: 'Priya Sharma', email: 'priya@example.com' }
+});
+
+// Verify webhook
+const isValid = PayEngine.verifyWebhook(
+  req.body, req.headers['x-gateway-signature'], secret
+);
+if (!isValid) return res.status(400).send('Invalid webhook');</pre></div>
+          </div>
+
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-title" style="margin-bottom:16px">Browser Checkout SDK</div>
+            <div class="code-block"><pre style="font-size:12px;white-space:pre-wrap">&lt;script src="/v1/checkout.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+const pe = new PayEngine({ key: 'key_id' });
+
+pe.open({
+  order_id:    'order_xyz',
+  amount:      50000,
+  currency:    'INR',
+  name:        'Acme Store',
+  description: 'Order #1234',
+  prefill: { name: 'Priya Sharma', email: 'priya@example.com' },
+  handler: function(response) {
+    // Send response.razorpay_payment_id to your server for verification
+    console.log('Payment ID:', response.razorpay_payment_id);
+  },
+  modal: { ondismiss: function() { console.log('Checkout closed'); } },
+});
+&lt;/script&gt;</pre></div>
+          </div>
+
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-title" style="margin-bottom:16px">Integration Guide</div>
+            <div class="integration-steps">
+              <div class="step"><div class="step-num">1</div><div><strong>Create an order</strong><p><code>POST /v1/orders</code> with <code>amount</code> in paise. Returns <code>order_id</code>. Send <code>X-Idempotency-Key</code> to safely retry.</p></div></div>
+              <div class="step"><div class="step-num">2</div><div><strong>Open checkout</strong><p>Load <code>/v1/checkout.js</code> and call <code>pe.open({ order_id, amount, handler })</code>. Customer picks UPI / Card / Net Banking.</p></div></div>
+              <div class="step"><div class="step-num">3</div><div><strong>Verify on server</strong><p>Your <code>handler</code> receives the payment ID. Fetch <code>GET /v1/payments/:id</code> on your server to confirm <code>status: captured</code>.</p></div></div>
+              <div class="step"><div class="step-num">4</div><div><strong>Register a webhook</strong><p><code>POST /v1/webhooks</code> with your endpoint URL. Receive <code>payment.captured</code> events. Always verify <code>X-Gateway-Signature</code>.</p></div></div>
+              <div class="step"><div class="step-num">5</div><div><strong>Issue refunds</strong><p><code>POST /v1/refunds</code> with <code>payment_id</code> and optional partial <code>amount</code>. Settlements are processed T+2.</p></div></div>
+            </div>
+          </div>
+
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-title" style="margin-bottom:12px">Test Credentials</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+              <div style="background:#f9fafb;border-radius:8px;padding:14px">
+                <div style="font-size:11px;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Test Cards</div>
+                <div style="font-family:monospace;font-size:12px;line-height:1.8;color:#374151">
+                  4111 1111 1111 1111 — Success<br>
+                  4000 0000 0000 0002 — Failure<br>
+                  Expiry: any future date<br>
+                  CVV: any 3 digits
+                </div>
+              </div>
+              <div style="background:#f9fafb;border-radius:8px;padding:14px">
+                <div style="font-size:11px;font-weight:700;color:#10b981;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Test UPI IDs</div>
+                <div style="font-family:monospace;font-size:12px;line-height:1.8;color:#374151">
+                  success@payengine — Captured<br>
+                  failure@payengine — Failed<br>
+                  pending@payengine — Pending<br>
+                  any@upi — Success (default)
+                </div>
+              </div>
+              <div style="background:#f9fafb;border-radius:8px;padding:14px">
+                <div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Error Codes</div>
+                <div style="font-family:monospace;font-size:12px;line-height:1.8;color:#374151">
+                  BAD_REQUEST_ERROR<br>
+                  AUTHENTICATION_ERROR<br>
+                  RATE_LIMIT_ERROR<br>
+                  NOT_FOUND_ERROR
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

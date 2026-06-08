@@ -1,0 +1,170 @@
+/* ─── Checkout page ────────────────────────────── */
+.checkout-body {
+  min-height: 100vh;
+  background: linear-height 100vh;
+  background: #f3f4f6;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px 48px;
+}
+.checkout-wrap { width: 100%; max-width: 460px; }
+
+.checkout-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+}
+.center-text { text-align: center; }
+
+/* Header */
+.checkout-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.checkout-avatar {
+  width: 48px; height: 48px;
+  background: #4f46e5;
+  color: #fff;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; flex-shrink: 0;
+}
+.checkout-merchant { font-size: 11px; color: #9ca3af; font-weight: 500; text-transform: uppercase; }
+.checkout-title    { font-size: 16px; font-weight: 700; color: #111827; margin-top: 2px; }
+.checkout-desc     { font-size: 13px; color: #6b7280; margin-bottom: 20px; line-height: 1.5; }
+
+/* Amount display */
+.amount-display {
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.amount-label { font-size: 12px; color: #6b7280; font-weight: 500; }
+.amount-value { font-size: 24px; font-weight: 800; color: #111827; }
+
+/* Partial payment progress */
+.partial-bar {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+}
+.partial-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+.progress-track {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: #10b981;
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+
+/* Fields */
+.fields-section { margin-bottom: 4px; }
+.field          { margin-bottom: 14px; }
+.field label    { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+.field input    {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s;
+}
+.field input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+
+/* Payment method */
+.method-section { margin: 20px 0; }
+.method-label   { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 10px; }
+.method-grid    { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.method-opt input { display: none; }
+.method-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all .15s;
+  user-select: none;
+}
+.method-card:hover          { border-color: #a5b4fc; background: #f5f3ff; }
+.method-icon                { font-size: 20px; }
+.method-opt input:checked + .method-card {
+  border-color: #4f46e5;
+  background:   #eef2ff;
+  color:        #4f46e5;
+}
+
+/* Pay button */
+.pay-btn {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 14px;
+}
+
+/* Secure tag */
+.secure-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* State icons */
+.state-icon {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700;
+  margin: 0 auto 16px;
+}
+.state-icon-success { background: #d1fae5; color: #059669; }
+.state-icon-fail    { background: #fee2e2; color: #dc2626; }
+.state-icon-warn    { background: #fef3c7; color: #d97706; }
+
+/* Loading spinner */
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 32px auto 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Hidden utility */
+.hidden { display: none !important; }

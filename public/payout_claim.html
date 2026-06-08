@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claim Your Payout</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    body { min-height: 100vh; background: #f9fafb; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .claim-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.08); padding: 40px; width: 100%; max-width: 460px; }
+    .claim-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+    .claim-brand svg { flex-shrink: 0; }
+    .claim-brand span { font-size: 20px; font-weight: 700; color: #1f2937; }
+    .amount-badge { background: #ede9fe; color: #4f46e5; border-radius: 12px; padding: 14px 20px; text-align: center; margin-bottom: 24px; }
+    .amount-badge .label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+    .amount-badge .value { font-size: 32px; font-weight: 800; color: #1f2937; }
+    .purpose-chip { display: inline-block; background: #f3f4f6; color: #374151; font-size: 12px; font-weight: 600; border-radius: 20px; padding: 4px 12px; text-transform: capitalize; margin-bottom: 4px; }
+    .tabs { display: flex; gap: 0; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 10px; background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 500; color: #6b7280; transition: all .15s; }
+    .tab-btn.active { background: #4f46e5; color: #fff; }
+    .success-state { text-align: center; padding: 20px 0; }
+    .success-icon { width: 64px; height: 64px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; }
+  </style>
+</head>
+<body>
+
+<script src="/js/exit-popup.js"></script>
+
+<div class="claim-card">
+  <div class="claim-brand">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#4f46e5"/>
+      <path d="M8 16h16M16 8v16" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <span>PayEngine</span>
+  </div>
+
+  <div id="loadingState" style="text-align:center;padding:40px 0;color:#9ca3af">Loading…</div>
+
+  <div id="mainState" style="display:none">
+    <div class="amount-badge">
+      <div class="label">You will receive</div>
+      <div class="value" id="payoutAmount">—</div>
+    </div>
+    <div style="margin-bottom:20px">
+      <span class="purpose-chip" id="purposeChip">payout</span>
+      <p style="font-size:14px;color:#6b7280;margin:8px 0 0" id="descText"></p>
+    </div>
+
+    <div class="field">
+      <label>Your Name *</label>
+      <input type="text" id="recipientName" placeholder="Full name" />
+    </div>
+    <div class="field">
+      <label>Email (optional)</label>
+      <input type="email" id="recipientEmail" placeholder="you@example.com" />
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tabBank" onclick="switchTab('bank')">Bank Account</button>
+      <button class="tab-btn" id="tabUpi" onclick="switchTab('upi')">UPI</button>
+    </div>
+
+    <div id="bankFields">
+      <div class="field">
+        <label>Account Number *</label>
+        <input type="text" id="accountNumber" placeholder="e.g. 123456789012" />
+      </div>
+      <div class="field">
+        <label>IFSC Code *</label>
+        <input type="text" id="ifscCode" placeholder="e.g. HDFC0001234" style="text-transform:uppercase" />
+      </div>
+    </div>
+
+    <div id="upiFields" style="display:none">
+      <div class="field">
+        <label>UPI ID *</label>
+        <input type="text" id="vpaInput" placeholder="yourname@upi" />
+      </div>
+    </div>
+
+    <div id="claimError" class="error-msg hidden"></div>
+    <button class="btn btn-primary btn-full" id="claimBtn" onclick="submitClaim()">Claim Payout</button>
+    <p style="font-size:11px;color:#9ca3af;text-align:center;margin-top:12px">
+      Your bank details are end-to-end encrypted. Powered by PayEngine.
+    </p>
+  </div>
+
+  <div id="successState" style="display:none" class="success-state">
+    <div class="success-icon">✓</div>
+    <h3 style="margin:0 0 8px">Payout Initiated!</h3>
+    <p style="color:#6b7280;font-size:14px">
+      Your payout of <strong id="successAmount"></strong> has been initiated.<br/>
+      It will reach your account within minutes.
+    </p>
+  </div>
+
+  <div id="expiredState" style="display:none;text-align:center;padding:20px 0">
+    <div style="font-size:48px;margin-bottom:16px">⏰</div>
+    <h3 style="margin:0 0 8px">Link Expired</h3>
+    <p style="color:#9ca3af">This payout link is no longer valid.</p>
+  </div>
+</div>
+
+<script>
+const code = location.pathname.split('/pout/')[1];
+let activeTab = 'bank';
+
+function fmt(paise) {
+  return '₹' + (paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tabBank').classList.toggle('active', tab === 'bank');
+  document.getElementById('tabUpi').classList.toggle('active', tab === 'upi');
+  document.getElementById('bankFields').style.display = tab === 'bank' ? '' : 'none';
+  document.getElementById('upiFields').style.display  = tab === 'upi'  ? '' : 'none';
+}
+
+async function loadLink() {
+  try {
+    const res  = await fetch(`/api/pub/payout_links/${code}`);
+    const data = await res.json();
+    document.getElementById('loadingState').style.display = 'none';
+    if (!res.ok || data.status === 'expired') {
+      document.getElementById('expiredState').style.display = '';
+      return;
+    }
+    document.getElementById('payoutAmount').textContent = fmt(data.amount);
+    document.getElementById('purposeChip').textContent  = data.purpose || 'payout';
+    document.getElementById('descText').textContent     = data.description || '';
+    document.getElementById('mainState').style.display  = '';
+  } catch {
+    document.getElementById('loadingState').textContent = 'Failed to load payout link.';
+  }
+}
+
+async function submitClaim() {
+  const errorEl = document.getElementById('claimError');
+  errorEl.classList.add('hidden');
+
+  const name = document.getElementById('recipientName').value.trim();
+  if (!name) { errorEl.textContent = 'Name is required'; errorEl.classList.remove('hidden'); return; }
+
+  const body = { name, email: document.getElementById('recipientEmail').value.trim() || undefined };
+  if (activeTab === 'bank') {
+    body.account_type   = 'bank_account';
+    body.account_number = document.getElementById('accountNumber').value.trim();
+    body.ifsc           = document.getElementById('ifscCode').value.trim().toUpperCase();
+    if (!body.account_number || !body.ifsc) {
+      errorEl.textContent = 'Account number and IFSC are required';
+      errorEl.classList.remove('hidden'); return;
+    }
+  } else {
+    body.account_type = 'vpa';
+    body.vpa          = document.getElementById('vpaInput').value.trim();
+    if (!body.vpa) { errorEl.textContent = 'UPI ID is required'; errorEl.classList.remove('hidden'); return; }
+  }
+
+  const btn = document.getElementById('claimBtn');
+  btn.disabled    = true;
+  btn.textContent = 'Processing…';
+
+  try {
+    const res  = await fetch(`/api/pub/payout_links/${code}/claim`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to claim payout');
+    ExitPopup.markDone();
+    document.getElementById('mainState').style.display   = 'none';
+    document.getElementById('successState').style.display = '';
+    document.getElementById('successAmount').textContent  = fmt(data.amount);
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.remove('hidden');
+    btn.disabled    = false;
+    btn.textContent = 'Claim Payout';
+  }
+}
+
+loadLink();
+
+// ── Exit popup (via shared exit-popup.js) ──────────────────────────────────
+ExitPopup.setMessage('Your payout claim is not complete yet.\nYour payout will not be initiated if you leave.');
+
+['recipientName','recipientEmail','accountNumber','ifscCode','vpaInput'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => ExitPopup.markDirty());
+});
+</script>
+</body>
+</html>
