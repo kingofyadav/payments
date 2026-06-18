@@ -1,6 +1,7 @@
 const { randomUUID } = require('crypto');
 const { getDb } = require('../db/database');
 const { signPayload } = require('./signature');
+const { logger, captureException } = require('./logger');
 
 // Exponential backoff: 10s → 30s → 5m → 30m → 2h → give up
 const RETRY_DELAYS = [10, 30, 300, 1800, 7200];
@@ -99,9 +100,14 @@ async function runWebhookDelivery() {
       const [primary, ...rest] = endpoints;
       await deliverWebhook(ev.id, primary.url, primary.secret);
       for (const ep of rest) {
-        deliverWebhook(ev.id, ep.url, ep.secret).catch(() => {});
+        deliverWebhook(ev.id, ep.url, ep.secret).catch((err) => {
+          logger.warn({ err, webhookId: ev.id, url: ep.url }, 'secondary webhook delivery failed');
+        });
       }
     }
+  } catch (err) {
+    logger.error({ err }, 'webhook delivery cycle error');
+    captureException(err);
   } finally {
     _deliveryRunning = false;
   }

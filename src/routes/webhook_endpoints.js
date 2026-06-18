@@ -2,23 +2,40 @@ const express    = require('express');
 const { randomUUID, randomBytes } = require('crypto');
 const { getDb }  = require('../db/database');
 const { apiError } = require('../middleware/errors');
+const { validateWebhookUrl } = require('../middleware/validateUrl');
 
 const router = express.Router();
 
 const ALL_EVENTS = [
+  // Core payments
   'payment.created', 'payment.captured', 'payment.failed', 'payment.refunded',
+  // Orders
   'order.created', 'order.paid',
+  // Refunds
   'refund.created',
-  'subscription.activated', 'subscription.charged', 'subscription.halted', 'subscription.cancelled',
+  // Payment links
+  'payment_link.paid',
+  // Subscriptions
+  'subscription.activated', 'subscription.charged', 'subscription.completed',
+  'subscription.halted', 'subscription.cancelled',
+  // Settlements & payouts
   'settlement.processed',
   'payout.processed', 'payout.failed',
+  // Marketplace — transfers
+  'transfer.created', 'transfer.processed', 'transfer.released', 'transfer.reversed',
+  // Marketplace — escrow
+  'escrow.funded', 'escrow.released', 'escrow.refunded', 'escrow.disputed',
+  // Marketplace — linked accounts
+  'linked_account.activated', 'linked_account.suspended',
 ];
 
 // POST /v1/webhooks — register a webhook endpoint
 router.post('/', (req, res) => {
   const { url, events = ['*'], secret } = req.body;
   if (!url) return apiError(res, 400, 'url is required', { field: 'url' });
-  if (!url.startsWith('http')) return apiError(res, 400, 'url must be a valid HTTP/HTTPS URL', { field: 'url' });
+  try { validateWebhookUrl(url); } catch (err) {
+    return apiError(res, 400, err.message, { field: 'url' });
+  }
 
   const validEvents = events === '*' || (Array.isArray(events) && events.every(e => e === '*' || ALL_EVENTS.includes(e)));
   if (!validEvents) return apiError(res, 400, `Invalid event types. Valid events: ${ALL_EVENTS.join(', ')}`);

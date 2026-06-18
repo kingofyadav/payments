@@ -27,7 +27,7 @@ router.post('/', (req, res) => {
 
   const now = Math.floor(Date.now() / 1000);
   if (order.expires_at < now) {
-    transitionOrder(order_id, 'expired');
+    if (order.status !== 'expired') transitionOrder(order_id, 'expired');
     return apiError(res, 400, 'Order has expired', { reason: 'order_expired', step: 'payment_initiation' });
   }
   if (order.status !== 'created') {

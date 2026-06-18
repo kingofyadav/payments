@@ -6,6 +6,7 @@ const { getTestCards, getTestUpiHandles } = require('../systems/test_scenarios')
 const { ALL_EVENTS } = require('./webhook_endpoints');
 const { signPayload } = require('../systems/signature');
 const { randomUUID }  = require('crypto');
+const { validateWebhookUrl } = require('../middleware/validateUrl');
 
 const router = express.Router();
 
@@ -48,14 +49,22 @@ router.get('/stats', (req, res) => {
   const day = now - 86400;
   const hour = now - 3600;
 
-  const { total_today, errors_today, avg_latency, p95_latency } = db.prepare(`
+  const { total_today, errors_today, avg_latency } = db.prepare(`
     SELECT
       COUNT(*)                                             AS total_today,
       SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errors_today,
-      CAST(AVG(latency_ms) AS INTEGER)                     AS avg_latency,
-      MAX(latency_ms)                                      AS p95_latency
+      CAST(AVG(latency_ms) AS INTEGER)                     AS avg_latency
     FROM api_request_logs WHERE merchant_id=? AND created_at>=?
   `).get(mid, day);
+
+  // True p95 via nearest-rank: sort ASC, skip to the 95th-percentile position.
+  // For N=0 the query returns null and we fall back to 0.
+  const p95offset = Math.max(0, Math.ceil((total_today ?? 0) * 0.95) - 1);
+  const p95_latency = db.prepare(`
+    SELECT latency_ms FROM api_request_logs
+    WHERE merchant_id=? AND created_at>=?
+    ORDER BY latency_ms ASC LIMIT 1 OFFSET ?
+  `).get(mid, day, p95offset)?.latency_ms ?? 0;
 
   const { total_hour, errors_hour } = db.prepare(`
     SELECT
@@ -141,7 +150,9 @@ router.post('/webhooks/test', async (req, res) => {
     secret    = ep.secret;
     epId      = ep.id;
   } else if (url) {
-    // Ad-hoc URL — generate a temp secret for signing
+    try { validateWebhookUrl(url); } catch (err) {
+      return apiError(res, 400, err.message, { field: 'url' });
+    }
     targetUrl = url;
     secret    = 'test_secret';
     epId      = null;
@@ -236,16 +247,36 @@ function tryParse(s) {
 function buildTestPayload(eventType, merchantId) {
   const base = { event: eventType, merchant_id: merchantId, timestamp: new Date().toISOString(), test: true };
   const fakes = {
-    'payment.captured':        { payment_id: 'pay_test000000000001', order_id: 'order_test0000001', amount: 50000, currency: 'INR', method: 'upi', status: 'captured' },
-    'payment.failed':          { payment_id: 'pay_test000000000002', order_id: 'order_test0000002', amount: 50000, currency: 'INR', method: 'card', status: 'failed', reason: 'card_declined' },
-    'refund.created':          { refund_id: 'ref_test00000000001', payment_id: 'pay_test000000000001', amount: 25000, status: 'processed' },
-    'order.paid':              { order_id: 'order_test0000001', amount: 50000, status: 'paid' },
-    'payout.processed':        { payout_id: 'pout_test000000001', amount: 100000, status: 'processed' },
-    'payout.failed':           { payout_id: 'pout_test000000002', amount: 100000, status: 'failed', reason: 'invalid_account' },
-    'subscription.charged':    { subscription_id: 'sub_test000000001', invoice_id: 'inv_test0000001', amount: 99900, status: 'charged' },
-    'settlement.processed':    { settlement_id: 'setl_test00000001', amount: 980000, fee: 20000 },
-    'transfer.processed':      { transfer_id: 'trf_test000000001', linked_account_id: 'la_test00001', amount: 50000, net_amount: 49000 },
-    'escrow.released':         { escrow_id: 'escw_test000000001', linked_account_id: 'la_test00001', amount: 50000 },
+    // Core payments
+    'payment.captured':          { payment_id: 'pay_test000000000001', order_id: 'order_test0000001', amount: 50000, currency: 'INR', method: 'upi', status: 'captured' },
+    'payment.failed':            { payment_id: 'pay_test000000000002', order_id: 'order_test0000002', amount: 50000, currency: 'INR', method: 'card', status: 'failed', reason: 'card_declined' },
+    // Refunds & orders
+    'refund.created':            { refund_id: 'ref_test00000000001', payment_id: 'pay_test000000000001', amount: 25000, status: 'processed' },
+    'order.paid':                { order_id: 'order_test0000001', amount: 50000, status: 'paid' },
+    // Payment links
+    'payment_link.paid':         { link_id: 'plink_test00000001', link_code: 'TESTLINK01', payment_id: 'pay_test000000000001', amount: 50000, currency: 'INR' },
+    // Subscriptions
+    'subscription.charged':      { subscription_id: 'sub_test000000001', invoice_id: 'inv_test0000001', payment_id: 'pay_test000000000001', amount: 99900, cycle: 1 },
+    'subscription.completed':    { subscription_id: 'sub_test000000001', invoice_id: 'inv_test0000002', payment_id: 'pay_test000000000002', amount: 99900, cycle: 12 },
+    'subscription.halted':       { subscription_id: 'sub_test000000001', invoice_id: 'inv_test0000003', reason: 'All retry attempts exhausted' },
+    'subscription.cancelled':    { subscription_id: 'sub_test000000001' },
+    // Settlements & payouts
+    'settlement.processed':      { settlement_id: 'setl_test00000001', amount: 980000, fee: 20000 },
+    'payout.processed':          { payout_id: 'pout_test000000001', amount: 100000, status: 'processed' },
+    'payout.failed':             { payout_id: 'pout_test000000002', amount: 100000, status: 'failed', reason: 'invalid_account' },
+    // Marketplace — transfers
+    'transfer.created':          { transfer_id: 'trf_test000000001', linked_account_id: 'la_test00001', amount: 50000, net_amount: 49000, on_hold: true },
+    'transfer.processed':        { transfer_id: 'trf_test000000001', linked_account_id: 'la_test00001', amount: 50000, net_amount: 49000 },
+    'transfer.released':         { transfer_id: 'trf_test000000001', linked_account_id: 'la_test00001' },
+    'transfer.reversed':         { transfer_id: 'trf_test000000001', reversal_id: 'rev_test000000001', amount: 50000 },
+    // Marketplace — escrow
+    'escrow.funded':             { escrow_id: 'escw_test000000001', linked_account_id: 'la_test00001', amount: 50000 },
+    'escrow.released':           { escrow_id: 'escw_test000000001', linked_account_id: 'la_test00001', amount: 50000 },
+    'escrow.refunded':           { escrow_id: 'escw_test000000001', amount: 50000 },
+    'escrow.disputed':           { escrow_id: 'escw_test000000001', reason: 'Goods not delivered' },
+    // Marketplace — linked accounts
+    'linked_account.activated':  { linked_account_id: 'la_test00001' },
+    'linked_account.suspended':  { linked_account_id: 'la_test00001' },
   };
   return { ...base, ...(fakes[eventType] ?? { message: 'Test event from PayEngine' }) };
 }

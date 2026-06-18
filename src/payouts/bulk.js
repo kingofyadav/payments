@@ -88,9 +88,8 @@ async function processBatch(batchId, merchantId) {
             account_number: item.account_number, ifsc: item.ifsc,
             account_holder: item.name,
           });
-          // Auto-verify for batch payouts (real system would require individual penny drop)
-          db.prepare('UPDATE fund_accounts SET verified=1 WHERE id=?').run(fa.id);
-          fa = getFundAccount(fa.id);
+          // fa.verified is 0 — createPayout will reject it with a clear error message.
+          // The caller must run a penny drop on this fund account before batching it.
         }
       }
 

@@ -1,6 +1,5 @@
-const crypto = require('crypto');
 const { getDb } = require('../db/database');
-const { hashSecret } = require('../systems/signature');
+const { verifySecret } = require('../systems/signature');
 
 function apiKeyAuth(req, res, next) {
   const auth = req.headers.authorization;
@@ -23,10 +22,7 @@ function apiKeyAuth(req, res, next) {
 
   if (!apiKey) return res.status(401).json({ error: 'Invalid API key' });
 
-  const provided = Buffer.from(hashSecret(keySecret), 'hex');
-  const stored   = Buffer.from(apiKey.key_secret, 'hex');
-
-  if (provided.length !== stored.length || !crypto.timingSafeEqual(provided, stored)) {
+  if (!verifySecret(keySecret, apiKey.key_secret)) {
     return res.status(401).json({ error: 'Invalid API key' });
   }
 

@@ -3,7 +3,7 @@ const express   = require('express');
 const { randomUUID } = require('crypto');
 const { getDb } = require('../db/database');
 const { listBlacklist, addToBlacklist, removeFromBlacklist, VALID_TYPES } = require('../fraud/blacklist');
-const { VALID_OPERATORS, VALID_ACTIONS } = require('../fraud/rules_engine');
+const { VALID_OPERATORS, VALID_ACTIONS, validateRegexPattern } = require('../fraud/rules_engine');
 const { apiError } = require('../middleware/errors');
 
 const router = express.Router();
@@ -50,6 +50,11 @@ router.post('/rules', (req, res) => {
     return apiError(res, 400, `operator must be one of: ${VALID_OPERATORS.join(', ')}`);
   if (!VALID_ACTIONS.includes(action))
     return apiError(res, 400, `action must be one of: ${VALID_ACTIONS.join(', ')}`);
+  if (operator === 'regex') {
+    try { validateRegexPattern(String(value)); } catch (err) {
+      return apiError(res, 400, err.message, { field: 'value' });
+    }
+  }
 
   const db  = getDb();
   const id  = 'frule_' + randomUUID().replace(/-/g, '').slice(0, 12);

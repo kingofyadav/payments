@@ -5,6 +5,33 @@ const { getDb }      = require('../db/database');
 const VALID_OPERATORS = ['gt', 'lt', 'gte', 'lte', 'eq', 'neq', 'in', 'not_in', 'contains', 'regex'];
 const VALID_ACTIONS   = ['block', 'review', 'flag'];
 
+// Compiled regex cache — avoids rebuilding on every transaction
+const _regexCache = new Map();
+
+// Detects catastrophically-backtracking patterns:
+//   nested quantifiers:         (a+)+, (.*)*
+//   alternation + outer quant:  (a|aa)+  — multiple paths, outer repetition
+const DANGEROUS_REGEX_RE = /\([^)]*(?:[+*{]|[|])[^)]*\)[+*{]/;
+
+/**
+ * Validates a user-supplied regex pattern for safety before storing.
+ * Throws a descriptive Error on invalid/dangerous input.
+ */
+function validateRegexPattern(pattern) {
+  if (typeof pattern !== 'string' || pattern.length > 200)
+    throw new Error('regex pattern must be a string of 200 characters or fewer');
+  if (DANGEROUS_REGEX_RE.test(pattern))
+    throw new Error('regex pattern contains a potentially catastrophic backtracking construct');
+  try { new RegExp(pattern, 'i'); } catch (e) {
+    throw new Error(`Invalid regex: ${e.message}`);
+  }
+}
+
+function _getRegex(pattern) {
+  if (!_regexCache.has(pattern)) _regexCache.set(pattern, new RegExp(pattern, 'i'));
+  return _regexCache.get(pattern);
+}
+
 function evaluate(value, operator, ruleValue) {
   switch (operator) {
     case 'gt':       return Number(value) >  Number(ruleValue);
@@ -16,7 +43,7 @@ function evaluate(value, operator, ruleValue) {
     case 'in':       return JSON.parse(ruleValue).includes(String(value));
     case 'not_in':   return !JSON.parse(ruleValue).includes(String(value));
     case 'contains': return String(value).toLowerCase().includes(ruleValue.toLowerCase());
-    case 'regex':    return new RegExp(ruleValue, 'i').test(String(value));
+    case 'regex':    return _getRegex(ruleValue).test(String(value));
     default:         return false;
   }
 }
@@ -78,4 +105,4 @@ function seedDefaultRules() {
   }
 }
 
-module.exports = { runRulesEngine, seedDefaultRules, VALID_OPERATORS, VALID_ACTIONS };
+module.exports = { runRulesEngine, seedDefaultRules, validateRegexPattern, VALID_OPERATORS, VALID_ACTIONS };

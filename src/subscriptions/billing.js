@@ -5,6 +5,7 @@ const { routePayment }   = require('../systems/routing');
 const { queueWebhook }   = require('../systems/webhook');
 const { createOrder, transitionOrder } = require('../systems/order');
 const { nextChargeAt, RETRY_DELAYS } = require('./manager');
+const { logger, captureException }   = require('../systems/logger');
 
 let isRunning = false; // prevent overlapping runs
 
@@ -14,6 +15,9 @@ async function runBillingCycle() {
   try {
     await _processRetries();
     await _processNewCharges();
+  } catch (err) {
+    logger.error({ err }, 'billing cycle error');
+    captureException(err);
   } finally {
     isRunning = false;
   }
@@ -131,6 +135,25 @@ async function _attemptCharge(inv, isRetry) {
           .run(newPaidCount, inv.subscription_id);
       }
     })();
+
+    // payment.captured fires for every captured payment, including subscription charges,
+    // so merchants subscribed to that event don't need a separate subscription.* listener.
+    queueWebhook({
+      merchantId: inv.merchant_id,
+      event: 'payment.captured',
+      payload: {
+        event:           'payment.captured',
+        payment_id:      paymentId,
+        order_id:        order.id,
+        subscription_id: inv.subscription_id,
+        invoice_id:      inv.id,
+        amount:          inv.amount,
+        currency:        'INR',
+        method:          'upi',
+        source:          'subscription',
+        timestamp:       new Date().toISOString(),
+      },
+    });
 
     queueWebhook({
       merchantId: inv.merchant_id,

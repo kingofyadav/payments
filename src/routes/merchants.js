@@ -5,6 +5,8 @@ const { generateKeyPair, hashSecret } = require('../systems/signature');
 const { hashPassword }  = require('../systems/password');
 const { scoreMerchant } = require('../risk/merchant_score');
 
+const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
 const router = express.Router();
 
 // POST /v1/merchants — register a merchant
@@ -12,6 +14,9 @@ router.post('/', async (req, res) => {
   const { name, email, password, webhook_url } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'name, email, and password are required' });
+  }
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ error: 'email is not a valid email address' });
   }
   if (password.length < 8) {
     return res.status(400).json({ error: 'password must be at least 8 characters' });

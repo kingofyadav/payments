@@ -85,7 +85,8 @@ function getPayout(id) {
 }
 
 function listPayouts(merchantId, { status, contact_id, limit = 20, offset = 0 } = {}) {
-  const db = getDb();
+  const db  = getDb();
+  const cap = Math.min(Math.max(1, parseInt(limit) || 20), 100);
   let where = 'WHERE p.merchant_id=?';
   const params = [merchantId];
   if (status)     { where += ' AND p.status=?';     params.push(status); }
@@ -97,7 +98,7 @@ function listPayouts(merchantId, { status, contact_id, limit = 20, offset = 0 } 
     JOIN fund_accounts fa ON p.fund_account_id=fa.id
     JOIN contacts c ON p.contact_id=c.id
     ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?
-  `).all(...params, limit, offset);
+  `).all(...params, cap, parseInt(offset) || 0);
   return { total: count, items };
 }
 
@@ -168,6 +169,10 @@ async function runPayoutCycle() {
     for (const p of queued) {
       await _processSinglePayout(p.id, p.merchant_id);
     }
+  } catch (err) {
+    const { logger, captureException } = require('../systems/logger');
+    logger.error({ err }, 'payout cycle error');
+    captureException(err);
   } finally {
     _isRunning = false;
   }
